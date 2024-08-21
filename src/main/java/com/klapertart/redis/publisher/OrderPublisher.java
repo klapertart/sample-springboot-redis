@@ -12,7 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author tritronik
+ * @author klapertart
  * @since 8/21/2024
  */
 

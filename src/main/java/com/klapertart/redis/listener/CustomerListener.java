@@ -6,7 +6,7 @@ import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Component;
 
 /**
- * @author tritronik
+ * @author klapertart
  * @since 8/21/2024
  */
 

@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author tritr
+ * @author klapertart
  * @since 12/20/2023
  */
 

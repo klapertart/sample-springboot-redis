@@ -7,7 +7,7 @@ import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Component;
 
 /**
- * @author tritronik
+ * @author klapertart
  * @since 8/21/2024
  */
 

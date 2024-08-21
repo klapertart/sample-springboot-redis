@@ -26,7 +26,7 @@ import org.springframework.data.redis.stream.Subscription;
 import java.time.Duration;
 
 /**
- * @author tritronik
+ * @author klapertart
  * @since 8/21/2024
  */
 
