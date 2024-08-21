@@ -1,11 +1,14 @@
 package com.klapertart.redis;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.RedisSystemException;
+import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.connection.stream.ReadOffset;
@@ -27,6 +30,7 @@ import java.util.Set;
  */
 
 @SpringBootTest
+@Slf4j
 public class RedisTest {
     @Autowired
     private StringRedisTemplate redisTemplate;
@@ -184,6 +188,23 @@ public class RedisTest {
 
         for (MapRecord<String, Object, Object> record: records){
             System.out.println(record);
+        }
+    }
+
+    @Test
+    void testPubSub() {
+        // subscribe
+        redisTemplate.getConnectionFactory().getConnection().subscribe(new MessageListener() {
+            @Override
+            public void onMessage(Message message, byte[] pattern) {
+                var event = new String(message.getBody());
+                log.info("EVENT: {}", event);
+            }
+        }, "my-channel".getBytes());
+
+        // publisher
+        for (int i = 0; i < 10; i++) {
+            redisTemplate.convertAndSend("my-channel", "Hello world - " + i);
         }
     }
 }

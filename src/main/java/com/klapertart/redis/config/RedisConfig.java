@@ -1,5 +1,6 @@
 package com.klapertart.redis.config;
 
+import com.klapertart.redis.listener.CustomerListener;
 import com.klapertart.redis.listener.OrderListener;
 import com.klapertart.redis.model.Order;
 import io.lettuce.core.RedisCommandExecutionException;
@@ -8,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.RedisSystemException;
+import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
@@ -15,6 +18,8 @@ import org.springframework.data.redis.connection.stream.ReadOffset;
 import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer;
 import org.springframework.data.redis.stream.Subscription;
 
@@ -66,5 +71,13 @@ public class RedisConfig {
                 .build();
 
         return StreamMessageListenerContainer.create(connectionFactory, options);
+    }
+
+    @Bean
+    public RedisMessageListenerContainer messageListenerContainer(RedisConnectionFactory connectionFactory, CustomerListener customerListener){
+        var container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.addMessageListener(customerListener, new ChannelTopic("customers"));
+        return container;
     }
 }
