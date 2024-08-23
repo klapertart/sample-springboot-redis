@@ -1,5 +1,7 @@
 package com.klapertart.redis;
 
+import com.klapertart.redis.model.Product;
+import com.klapertart.redis.repository.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,10 @@ import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.connection.stream.ReadOffset;
 import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.core.*;
+import org.springframework.data.redis.support.collections.DefaultRedisMap;
+import org.springframework.data.redis.support.collections.RedisList;
+import org.springframework.data.redis.support.collections.RedisMap;
+import org.springframework.data.redis.support.collections.RedisSet;
 
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.*;
@@ -34,6 +40,9 @@ import java.util.Set;
 public class RedisTest {
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private ProductRepository repository;
 
     @Test
     void testString() {
@@ -206,5 +215,76 @@ public class RedisTest {
         for (int i = 0; i < 10; i++) {
             redisTemplate.convertAndSend("my-channel", "Hello world - " + i);
         }
+    }
+
+    @Test
+    void testRedisList() {
+        // set data in redis
+        List<String> list = RedisList.create("kids", redisTemplate);
+        list.add("abdillah");
+        list.add("hamka");
+
+        // get data from redis
+        List<String> names = redisTemplate.opsForList().range("kids", 0, -1);
+        assertThat(names, hasItems("abdillah", "hamka"));
+    }
+
+    @Test
+    void testRedisSet() {
+        Set<String> set = RedisSet.create("birds", redisTemplate);
+        set.addAll(Set.of("Elang", "Garuda", "Rajawali"));
+        set.addAll(Set.of("Nuri", "Elang", "Gagak"));
+
+        Assertions.assertEquals(5, set.size());
+
+        Set<String> birds = redisTemplate.opsForSet().members("birds");
+        assertThat(birds, hasItems("Elang", "Garuda", "Rajawali", "Nuri", "Gagak"));
+    }
+
+    @Test
+    void testRedisMap() {
+        Map<String, String> map = new DefaultRedisMap<>("employee:1", redisTemplate);
+        map.put("name", "hamka");
+        map.put("address", "indonesia");
+        assertThat(map, hasEntry("name", "hamka"));
+
+        Map<Object, Object> entries = redisTemplate.opsForHash().entries("employee:1");
+        assertThat(entries, hasEntry("name", "hamka"));
+    }
+
+    @Test
+    void testRepository() {
+        Product product = Product.builder()
+                .id("1")
+                .name("Keyboard")
+                .price(10_000_000L)
+                .build();
+
+        repository.save(product);
+
+        Map<Object, Object> map = redisTemplate.opsForHash().entries("products:1");
+        Assertions.assertEquals(product.getName(), map.get("name"));
+        Assertions.assertEquals(product.getPrice().toString(), map.get("price"));
+
+
+        Product product2 = repository.findById("1").get();
+        Assertions.assertEquals(product, product2);
+    }
+
+    @Test
+    void testTtl() throws InterruptedException {
+        Product product = Product.builder()
+                .id("1")
+                .name("Keyboard")
+                .price(10_000_000L)
+                .ttl(3L)
+                .build();
+
+        repository.save(product);
+
+        Assertions.assertTrue(repository.findById("1").isPresent());
+
+        Thread.sleep(Duration.ofSeconds(5L).toMillis());
+        Assertions.assertFalse(repository.findById("1").isPresent());
     }
 }
